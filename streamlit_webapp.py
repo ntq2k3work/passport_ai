@@ -23,7 +23,19 @@ if uploaded_file is not None:
             data = {"type": visa_types[selected_type]}
             response = requests.post("http://localhost:8000/convert", files=files, data=data)
             if response.status_code == 200:
-                img = Image.open(io.BytesIO(response.content))
-                st.image(img, caption="Ảnh sau xử lý", use_column_width=True)
+                # Xử lý ảnh trong bộ nhớ mà không lưu file
+                img_bytes = response.content
+                img = Image.open(io.BytesIO(img_bytes))
+                
+                # Hiển thị ảnh từ bytes trực tiếp
+                st.image(img_bytes, caption="Ảnh sau xử lý", use_column_width=True)
+                
+                # Nút tải xuống sử dụng bytes gốc từ API
+                st.download_button(
+                    label="📥 Tải xuống ảnh đã xử lý",
+                    data=img_bytes,
+                    file_name=f"visa_photo_{visa_types[selected_type]}.jpg",
+                    mime="image/jpeg"
+                )
             else:
                 st.error("Lỗi xử lý ảnh!")
