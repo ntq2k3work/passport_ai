@@ -175,9 +175,9 @@ def handle_convert_visa(
     # Tạo nền trắng chuẩn
     result = np.full((height_px, width_px, 3), 255, dtype=np.uint8)
 
-    # Căn giữa vùng người trên nền trắng
+    # Căn giữa theo chiều ngang và đặt ở phía dưới ảnh
     start_x = (width_px - new_w) // 2
-    start_y = (height_px - new_h) // 2
+    start_y = height_px - new_h  # Đặt object ở cuối ảnh
     result[start_y:start_y+new_h, start_x:start_x+new_w] = person_resized
 
     # Lưu ảnh kết quả
