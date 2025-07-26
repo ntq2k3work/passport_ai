@@ -1,0 +1,135 @@
+[
+    {
+      "type": "Photo_2x2_in",
+      "size_mm": "40.0x50.0",
+      "size_px": "472x590",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 5.0,
+      "bottom_margin_mm": 7.0,
+      "left_margin_mm": 6.5,
+      "right_margin_mm": 6.5
+    },
+    {
+      "type": "Photo_30x40_mm",
+      "size_mm": "30.0x40.0",
+      "size_px": "354x472",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 4.0,
+      "bottom_margin_mm": 6.0,
+      "left_margin_mm": 5.0,
+      "right_margin_mm": 5.0
+    },
+    {
+      "type": "Photo_40x40_mm",
+      "size_mm": "40.0x40.0",
+      "size_px": "472x472",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 4.0,
+      "bottom_margin_mm": 6.0,
+      "left_margin_mm": 6.5,
+      "right_margin_mm": 6.5
+    },
+    {
+      "type": "Photo_40x50_mm",
+      "size_mm": "40.0x50.0",
+      "size_px": "472x590",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 5.0,
+      "bottom_margin_mm": 7.0,
+      "left_margin_mm": 6.5,
+      "right_margin_mm": 6.5
+    },
+    {
+      "type": "Photo_40x60_mm",
+      "size_mm": "40.0x60.0",
+      "size_px": "472x708",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 6.0,
+      "bottom_margin_mm": 8.0,
+      "left_margin_mm": 6.5,
+      "right_margin_mm": 6.5
+    },
+    {
+      "type": "Photo_50x50_mm",
+      "size_mm": "50.0x50.0",
+      "size_px": "590x590",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 5.0,
+      "bottom_margin_mm": 7.0,
+      "left_margin_mm": 7.0,
+      "right_margin_mm": 7.0
+    },
+    {
+      "type": "Photo_26x32_mm",
+      "size_mm": "26.0x32.0",
+      "size_px": "307x377",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 3.0,
+      "bottom_margin_mm": 5.0,
+      "left_margin_mm": 4.0,
+      "right_margin_mm": 4.0
+    },
+    {
+      "type": "Photo_25x35_mm",
+      "size_mm": "25.0x35.0",
+      "size_px": "295x413",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 3.0,
+      "bottom_margin_mm": 5.0,
+      "left_margin_mm": 4.0,
+      "right_margin_mm": 4.0
+    },
+    {
+      "type": "Photo_33x48_mm",
+      "size_mm": "33.0x48.0",
+      "size_px": "389x566",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 5.0,
+      "bottom_margin_mm": 7.0,
+      "left_margin_mm": 5.0,
+      "right_margin_mm": 5.0
+    },
+    {
+      "type": "Photo_22x32_mm",
+      "size_mm": "22.0x32.0",
+      "size_px": "259x377",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 2.5,
+      "bottom_margin_mm": 4.0,
+      "left_margin_mm": 3.0,
+      "right_margin_mm": 3.0
+    },
+    {
+      "type": "Photo_35x45_mm",
+      "size_mm": "35.0x45.0",
+      "size_px": "413x531",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 4.0,
+      "bottom_margin_mm": 6.0,
+      "left_margin_mm": 5.0,
+      "right_margin_mm": 5.0
+    },
+    {
+      "type": "Photo_35x49_mm",
+      "size_mm": "35.0x49.0",
+      "size_px": "413x578",
+      "dpi": 300,
+      "background": "light_blue",
+      "top_margin_mm": 5.0,
+      "bottom_margin_mm": 7.0,
+      "left_margin_mm": 5.0,
+      "right_margin_mm": 5.0
+    }
+  ]
+  

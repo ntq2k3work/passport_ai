@@ -57,3 +57,6 @@ docker build --tag abel_head_detector .
 docker compose up
 
 ```
+
+
+uvicorn api:app --reload
