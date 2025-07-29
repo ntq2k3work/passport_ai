@@ -55,20 +55,32 @@ def convert_image(
         os.remove(input_path)
         raise HTTPException(status_code=400, detail="Định dạng size_mm không hợp lệ")
     
+    # Kiểm tra tỷ lệ khuôn mặt so với ảnh
+    head_ratio_to_image = (head_bbox[2] * head_bbox[3]) / (width_px * height_px)
+    if head_ratio_to_image < 0.07:
+        os.remove(input_path)
+        raise HTTPException(status_code=400, detail="Tỷ lệ khuôn mặt so với ảnh quá nhỏ")
+    
     # Gọi hàm xử lý ảnh với các tham số mới
-    handle_convert_visa(
-        input_image_path=input_path,
-        output_image_path=output_path,
-        bbox=head_bbox,
-        size_px=(width_px, height_px),
-        size_mm=(width_mm, height_mm),
-        dpi=dpi,
-        top_margin_mm=top_margin_mm,
-        bottom_margin_mm=bottom_margin_mm,
-        left_margin_mm=left_margin_mm,
-        right_margin_mm=right_margin_mm,
-        background_color=background
-    )
+    try:
+        handle_convert_visa(
+            input_image_path=input_path,
+            output_image_path=output_path,
+            bbox=head_bbox,
+            size_px=(width_px, height_px),
+            size_mm=(width_mm, height_mm),
+            dpi=dpi,
+            top_margin_mm=top_margin_mm,
+            bottom_margin_mm=bottom_margin_mm,
+            left_margin_mm=left_margin_mm,
+            right_margin_mm=right_margin_mm,
+            background_color=background
+        )
+    except Exception as e:
+        os.remove(input_path)
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    
     
     # Xóa file input sau khi xử lý
     os.remove(input_path)

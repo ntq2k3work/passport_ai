@@ -240,6 +240,49 @@ def handle_convert_visa(
     head_width = head_x2 - head_x1
     head_height = head_y2 - head_y1
     
+    # Validate kích thước đầu
+    min_head_width = 20  # Tối thiểu 20 pixel
+    min_head_height = 25  # Tối thiểu 25 pixel
+    
+    if head_width < min_head_width or head_height < min_head_height:
+        raise ValueError(
+            f"Kích thước đầu quá nhỏ: {head_width}x{head_height} pixel. "
+            f"Tối thiểu yêu cầu: {min_head_width}x{min_head_height} pixel. "
+            f"Vui lòng kiểm tra lại ảnh đầu vào hoặc điều chỉnh ngưỡng confidence."
+        )
+    
+    # Kiểm tra tỷ lệ khuôn mặt so với ảnh
+    head_area = head_width * head_height
+    image_area = w_img * h_img
+    head_ratio_to_image = (head_area / image_area) * 100
+    
+    min_head_ratio = 7.0  # Tối thiểu 10%
+    
+    if head_ratio_to_image < min_head_ratio:
+        raise ValueError(
+            f"Tỷ lệ khuôn mặt so với ảnh quá nhỏ: {head_ratio_to_image:.2f}%. "
+            f"Tối thiểu yêu cầu: {min_head_ratio}%. "
+            f"Kích thước đầu: {head_width}x{head_height} pixel. "
+            f"Kích thước ảnh: {w_img}x{h_img} pixel. "
+            f"Vui lòng sử dụng ảnh có khuôn mặt lớn hơn hoặc điều chỉnh ngưỡng confidence."
+        )
+        
+        # trả ra response với success = False
+    
+    # Kiểm tra tỷ lệ đầu có hợp lý không (chiều cao thường lớn hơn chiều rộng)
+    head_ratio = head_height / head_width
+    if head_ratio < 0.8 or head_ratio > 2.0:
+        print(f"Cảnh báo: Tỷ lệ đầu không chuẩn ({head_ratio:.2f}). Kết quả có thể không chính xác.")
+    
+    # Kiểm tra vùng đầu có nằm trong ảnh không
+    if (head_x1 < 0 or head_y1 < 0 or 
+        head_x2 > w_img or head_y2 > h_img):
+        raise ValueError(
+            f"Vùng đầu ({head_x1},{head_y1},{head_x2},{head_y2}) "
+            f"vượt quá kích thước ảnh ({w_img}x{h_img}). "
+            f"Vui lòng kiểm tra lại bbox."
+        )
+    
     # Chuyển đổi margins từ mm sang pixel
     def mm_to_px_margin(mm_val):
         inch = mm_val / 25.4
@@ -313,6 +356,8 @@ def handle_convert_visa(
     print(f"Margins (mm): top={top_margin_mm}, bottom={bottom_margin_mm}, left={left_margin_mm}, right={right_margin_mm}")
     print(f"Margins (px): top={top_margin_px}, bottom={bottom_margin_px}, left={left_margin_px}, right={right_margin_px}")
     print(f"Vùng đầu gốc: ({head_x1},{head_y1}) -> ({head_x2},{head_y2})")
+    print(f"Kích thước đầu: {head_width}x{head_height} px")
+    print(f"Tỷ lệ khuôn mặt so với ảnh: {head_ratio_to_image:.2f}%")
     print(f"Vùng cắt: ({crop_x1},{crop_y1}) -> ({crop_x2},{crop_y2})")
     print(f"Kích thước vùng cắt: {w_cropped}x{h_cropped} px")
     print(f"Kích thước resize: {width_px}x{height_px} px")
@@ -371,6 +416,51 @@ def convert_visa_with_detection(
     
     if head_bbox is None:
         raise ValueError("Không thể nhận diện vùng đầu trong ảnh")
+    
+    # Validate kích thước đầu trước khi xử lý
+    if len(head_bbox) == 4:
+        if head_bbox[2] > head_bbox[0] and head_bbox[3] > head_bbox[1]:  # [x1, y1, x2, y2]
+            head_x1, head_y1, head_x2, head_y2 = head_bbox
+        else:  # [x, y, w, h]
+            head_x1, head_y1, w, h = head_bbox
+            head_x2, head_y2 = head_x1 + w, head_y1 + h
+        
+        head_width = head_x2 - head_x1
+        head_height = head_y2 - head_y1
+        
+        # Kiểm tra kích thước tối thiểu
+        min_head_width = 20
+        min_head_height = 25
+        
+        if head_width < min_head_width or head_height < min_head_height:
+            raise ValueError(
+                f"Kích thước đầu quá nhỏ: {head_width}x{head_height} pixel. "
+                f"Tối thiểu yêu cầu: {min_head_width}x{min_head_height} pixel. "
+                f"Vui lòng thử giảm ngưỡng confidence hoặc kiểm tra lại ảnh đầu vào."
+            )
+        
+        # Kiểm tra tỷ lệ khuôn mặt so với ảnh
+        img = cv2.imread(input_image_path)
+        h_img, w_img = img.shape[:2]
+        head_area = head_width * head_height
+        image_area = w_img * h_img
+        head_ratio_to_image = (head_area / image_area) * 100
+        
+        min_head_ratio = 20.0  # Tối thiểu 20%
+        
+        if head_ratio_to_image < min_head_ratio:
+            raise ValueError(
+                f"Tỷ lệ khuôn mặt so với ảnh quá nhỏ: {head_ratio_to_image:.2f}%. "
+                f"Tối thiểu yêu cầu: {min_head_ratio}%. "
+                f"Kích thước đầu: {head_width}x{head_height} pixel. "
+                f"Kích thước ảnh: {w_img}x{h_img} pixel. "
+                f"Vui lòng sử dụng ảnh có khuôn mặt lớn hơn hoặc điều chỉnh ngưỡng confidence."
+            )
+        
+        # Kiểm tra tỷ lệ đầu
+        head_ratio = head_height / head_width
+        if head_ratio < 0.8 or head_ratio > 2.0:
+            print(f"Cảnh báo: Tỷ lệ đầu không chuẩn ({head_ratio:.2f}). Kết quả có thể không chính xác.")
     
     # Chuyển đổi ảnh với vùng đầu đã nhận diện
     handle_convert_visa(
