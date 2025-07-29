@@ -2,10 +2,19 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import FileResponse
 import shutil
 import os
+from fastapi.middleware.cors import CORSMiddleware
 from handle_convert import handle_convert_visa, detect_head_region
 from typing import Optional
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/convert")
 def convert_image(
