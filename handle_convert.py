@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import onnxruntime as ort
+from cvzone.FaceMeshModule import FaceMeshDetector
 
 def detect_head_region(image_path, model_path="models/best_re_final.onnx", conf_threshold=0.5):
     """
@@ -236,6 +237,29 @@ def handle_convert_visa(
     else:
         raise ValueError("bbox phải có 4 giá trị")
 
+    # Validate nếu mặt bị che
+    # Kiểm tra mặt có bị che không bằng FaceMesh
+    try:
+        detector = FaceMeshDetector(maxFaces=1)
+        img_copy = img.copy()
+        img_copy, faces = detector.findFaceMesh(img_copy, draw=False)
+    except Exception as e:
+        raise ValueError(f"Lỗi khi chạy mediapipe: {str(e)}")
+
+    if not faces:
+        raise ValueError(
+            "Không thể phát hiện các điểm trên khuôn mặt. "
+            "Vui lòng kiểm tra xem mặt có bị che không hoặc ảnh có rõ nét không."
+        )
+
+    face = faces[0]
+    if len(face) < 400:
+        raise ValueError(
+            f"Chỉ phát hiện được {len(face)} điểm trên khuôn mặt. "
+            "Có thể một phần khuôn mặt đang bị che. "
+            "Vui lòng sử dụng ảnh có khuôn mặt không bị che."
+        )
+
     # Tính kích thước vùng đầu
     head_width = head_x2 - head_x1
     head_height = head_y2 - head_y1
@@ -266,8 +290,8 @@ def handle_convert_visa(
             f"Kích thước ảnh: {w_img}x{h_img} pixel. "
             f"Vui lòng sử dụng ảnh có khuôn mặt lớn hơn hoặc điều chỉnh ngưỡng confidence."
         )
-        
-        # trả ra response với success = False
+            
+    
     
     # Kiểm tra tỷ lệ đầu có hợp lý không (chiều cao thường lớn hơn chiều rộng)
     head_ratio = head_height / head_width
