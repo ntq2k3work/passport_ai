@@ -88,11 +88,27 @@ if uploaded_file is not None:
                     file_name=f"visa_photo_{selected_data['type']}.jpg",
                     mime="image/jpeg"
                 )
+                
+                st.success("✅ Xử lý ảnh thành công! Ảnh đã được validate và chuyển đổi.")
             else:
-                st.error(f"Lỗi xử lý ảnh! Status code: {response.status_code}")
+                st.error(f"❌ Lỗi xử lý ảnh! Status code: {response.status_code}")
                 try:
                     error_detail = response.json()
-                    st.error(f"Chi tiết lỗi: {error_detail}")
+                    if 'detail' in error_detail:
+                        st.error(f"Chi tiết lỗi: {error_detail['detail']}")
+                        
+                        # Hiển thị thông báo cụ thể cho validation
+                        error_msg = error_detail['detail']
+                        if "mũ" in error_msg or "kính" in error_msg or "khẩu trang" in error_msg:
+                            st.warning("🔍 **Lưu ý về yêu cầu ảnh:**")
+                            st.markdown("""
+                            - Không đội mũ, nón, mũ bảo hiểm
+                            - Không đeo kính mắt, kính râm
+                            - Không đeo khẩu trang
+                            - Khuôn mặt phải rõ ràng và không bị che
+                            """)
+                    else:
+                        st.error(f"Chi tiết lỗi: {error_detail}")
                 except:
                     st.error(f"Response: {response.text}")
 else:

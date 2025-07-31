@@ -3,6 +3,78 @@ import numpy as np
 from PIL import Image
 import onnxruntime as ort
 from cvzone.FaceMeshModule import FaceMeshDetector
+from ultralytics import YOLO
+from inference_sdk import InferenceHTTPClient
+
+def validate_photo_requirements(image_path):
+    """
+    Comprehensive validation for passport/visa photo requirements
+    Checks for: hats, glasses, masks, and other forbidden items
+    Returns: True if valid, raises ValueError if invalid
+    """
+    try:
+        # First validate hat and glasses
+        validate_hat_glasses(image_path)
+        
+        # Additional validations can be added here
+        # For example: check face orientation, lighting, etc.
+        
+        return True
+        
+    except Exception as e:
+        raise e
+def validate_hat_glasses(image_path):
+    """
+    Validate if the person in the image is wearing a hat or glasses
+    Returns: True if valid (no hat/glasses), raises ValueError if invalid
+    """
+    CLIENT = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key="2ZBwL1lXweIugeMxuOe9"
+    )
+
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Không thể đọc ảnh")
+            
+        result = result = CLIENT.infer(img, model_id="suspicious-objects-articles-3/1")
+        
+        
+        # Kiểm tra kết quả từ API
+        if 'predictions' in result and len(result['predictions']) > 0:
+            predictions = result['predictions']
+            detected_items = []
+            
+            for pred in predictions:
+                if 'class' in pred:
+                    class_name = pred['class'].lower()
+                    confidence = pred.get('confidence', 0)
+                    
+                    # Chỉ xem xét các detection có confidence > 0.5
+                    if confidence > 0.5:
+                        if 'suspicious-cap' in class_name or 'cap' in class_name or 'helmet' in class_name:
+                            detected_items.append('mũ')
+                        elif 'suspicious-sunglasses' in class_name or 'sunglasses' in class_name or 'eyewear' in class_name:
+                            detected_items.append('kính')
+                        elif 'suspicious-masks' in class_name:
+                            detected_items.append('khẩu trang')
+            
+            if detected_items:
+                readable = ', '.join(detected_items)
+                raise ValueError(f"Ảnh không hợp lệ: phát hiện có {readable}. "
+                               f"Vui lòng chụp ảnh không đội mũ, đeo kính hoặc đeo khẩu trang.")
+        
+        print("✅ Validation passed: No hat, glasses, or mask detected")
+        return True
+
+    except ValueError as ve:
+        raise ve  # Để API catch được
+    except Exception as e:
+        print(f"[validate_hat_glasses] Lỗi: {e}")
+        # Trong trường hợp lỗi API, vẫn cho phép tiếp tục xử lý
+        print("⚠️ Warning: Could not validate hat/glasses due to API error, continuing...")
+        return True
 
 def detect_head_region(image_path, model_path="models/best_re_final.onnx", conf_threshold=0.5):
     """
@@ -416,7 +488,7 @@ def convert_visa_with_detection(
     input_image_path, output_image_path, model_path="models/best_re_final.onnx",
     size_px=None, size_mm=None, dpi=300,
     top_margin_mm=0, bottom_margin_mm=0, left_margin_mm=0, right_margin_mm=0,
-    background_color='white', conf_threshold=0.8
+    background_color='white', conf_threshold=0.8, validate_requirements=True
 ):
     """
     Hàm tích hợp để nhận diện vùng đầu và chuyển đổi ảnh visa:
@@ -433,7 +505,18 @@ def convert_visa_with_detection(
     right_margin_mm: khoảng cách từ mặt tới rìa ảnh bên phải (mm)
     background_color: màu nền ('white', 'light_blue', etc.)
     conf_threshold: ngưỡng confidence cho detection (mặc định 0.8)
+    validate_requirements: có validate yêu cầu ảnh không (mặc định True)
     """
+    
+    # Validate photo requirements if enabled
+    if validate_requirements:
+        try:
+            print("🔍 Đang kiểm tra yêu cầu ảnh...")
+            validate_photo_requirements(input_image_path)
+            print("✅ Validation passed: No hat or glasses detected")
+        except ValueError as e:
+            print(f"❌ Validation failed: {e}")
+            raise e
     
     # Nhận diện vùng đầu
     head_bbox = detect_head_region(input_image_path, model_path, conf_threshold)

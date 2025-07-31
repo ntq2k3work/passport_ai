@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 import shutil
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from handle_convert import handle_convert_visa, detect_head_region
+from handle_convert import handle_convert_visa, detect_head_region, validate_photo_requirements
 from typing import Optional
 
 app = FastAPI()
@@ -34,6 +34,16 @@ def convert_image(
     # Lưu file upload tạm thời
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    
+    # Validate photo requirements (hat, glasses, etc.)
+    try:
+        validate_photo_requirements(input_path)
+    except ValueError as e:
+        os.remove(input_path)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        os.remove(input_path)
+        raise HTTPException(status_code=400, detail=f"Lỗi validation: {str(e)}")
     
     # Nhận diện vùng đầu
     head_bbox = detect_head_region(input_path)
