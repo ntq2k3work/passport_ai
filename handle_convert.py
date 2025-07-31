@@ -6,6 +6,45 @@ from cvzone.FaceMeshModule import FaceMeshDetector
 from ultralytics import YOLO
 from inference_sdk import InferenceHTTPClient
 
+
+def validate_smile(image_path):
+    """
+    Validate if the person in the image is smiling
+    Returns: True if valid (smiling), raises ValueError if invalid
+    """
+    print("🔍 Starting smile validation...")
+
+    CLIENT = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key="2ZBwL1lXweIugeMxuOe9"
+    )
+
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Không thể đọc ảnh")
+        
+        result = CLIENT.infer(img, model_id="smile-detection-bttgg/1")
+        
+        # Kiểm tra kết quả từ API
+        if 'predictions' in result and len(result['predictions']) > 0:
+            predictions = result['predictions']
+            for pred in predictions:
+                if 'class' in pred and pred['class'].lower() == 'non-smiling' and pred.get('confidence') >= 0.8:
+                    print("✅ Validation passed: Person is smiling")
+                    return True
+        
+        raise ValueError("Ảnh không hợp lệ: Người trong ảnh cười. Vui lòng chụp ảnh nghiêm túc.")
+    
+    except ValueError as ve:
+        raise ve  # Để API catch được
+    except Exception as e:
+        print(f"[validate_smile] Lỗi: {e}")
+        # Trong trường hợp lỗi API, vẫn cho phép tiếp tục xử lý
+        print("⚠️ Warning: Could not validate smile due to API error, continuing...")
+        return False
+    return True
+
 def validate_photo_requirements(image_path):
     """
     Comprehensive validation for passport/visa photo requirements
@@ -28,6 +67,8 @@ def validate_hat_glasses(image_path):
     Validate if the person in the image is wearing a hat or glasses
     Returns: True if valid (no hat/glasses), raises ValueError if invalid
     """
+    print("🔍 Starting hat/glasses validation...")
+    
     CLIENT = InferenceHTTPClient(
         api_url="https://serverless.roboflow.com",
         api_key="2ZBwL1lXweIugeMxuOe9"
@@ -488,7 +529,7 @@ def convert_visa_with_detection(
     input_image_path, output_image_path, model_path="models/best_re_final.onnx",
     size_px=None, size_mm=None, dpi=300,
     top_margin_mm=0, bottom_margin_mm=0, left_margin_mm=0, right_margin_mm=0,
-    background_color='white', conf_threshold=0.8, validate_requirements=True
+    background_color='white', conf_threshold=0.8
 ):
     """
     Hàm tích hợp để nhận diện vùng đầu và chuyển đổi ảnh visa:
@@ -507,16 +548,6 @@ def convert_visa_with_detection(
     conf_threshold: ngưỡng confidence cho detection (mặc định 0.8)
     validate_requirements: có validate yêu cầu ảnh không (mặc định True)
     """
-    
-    # Validate photo requirements if enabled
-    if validate_requirements:
-        try:
-            print("🔍 Đang kiểm tra yêu cầu ảnh...")
-            validate_photo_requirements(input_image_path)
-            print("✅ Validation passed: No hat or glasses detected")
-        except ValueError as e:
-            print(f"❌ Validation failed: {e}")
-            raise e
     
     # Nhận diện vùng đầu
     head_bbox = detect_head_region(input_image_path, model_path, conf_threshold)

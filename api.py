@@ -3,8 +3,9 @@ from fastapi.responses import FileResponse
 import shutil
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from handle_convert import handle_convert_visa, detect_head_region, validate_photo_requirements
+from handle_convert import handle_convert_visa, detect_head_region, validate_photo_requirements, validate_smile
 from typing import Optional
+from fastapi.responses import JSONResponse as JsonResponse
 
 app = FastAPI()
 
@@ -40,23 +41,44 @@ def convert_image(
         validate_photo_requirements(input_path)
     except ValueError as e:
         os.remove(input_path)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "ValidationError", "message": str(e)}
+        )
+        
+    try:
+        validate_smile(input_path)
+    except ValueError as e:
+        os.remove(input_path)
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "SmileValidationError", "message": str(e)}
+        )
     except Exception as e:
         os.remove(input_path)
-        raise HTTPException(status_code=400, detail=f"Lỗi validation: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "UnknownError", "message": "Lỗi không xác định khi xử lý ảnh"}
+        )
     
     # Nhận diện vùng đầu
     head_bbox = detect_head_region(input_path)
     if head_bbox is None:
         os.remove(input_path)
-        raise HTTPException(status_code=400, detail="Không thể nhận diện vùng đầu trong ảnh")
+        raise HTTPException(
+            status_code=422, 
+            detail={"error": "HeadError", "message": "Không nhận diện được vùng đầu trong ảnh"}
+        )
     
     # Parse size_px để lấy width và height
     try:
         width_px, height_px = map(int, size_px.split('x'))
     except ValueError:
         os.remove(input_path)
-        raise HTTPException(status_code=400, detail="Định dạng size_px không hợp lệ")
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "SizeError", "message": "Định dạng size_px không hợp lệ"}
+        )
     
     # Parse size_mm để lấy width và height
     try:
@@ -69,7 +91,10 @@ def convert_image(
     head_ratio_to_image = (head_bbox[2] * head_bbox[3]) / (width_px * height_px)
     if head_ratio_to_image < 0.07:
         os.remove(input_path)
-        raise HTTPException(status_code=400, detail="Tỷ lệ khuôn mặt so với ảnh quá nhỏ")
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "FaceMinimizeError", "message": "Tỉ lệ khuôn mặt so với ảnh quá nhỏ"}
+        )
     
     # Gọi hàm xử lý ảnh với các tham số mới
     try:
