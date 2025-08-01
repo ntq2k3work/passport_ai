@@ -5,6 +5,49 @@ import onnxruntime as ort
 from cvzone.FaceMeshModule import FaceMeshDetector
 from ultralytics import YOLO
 from inference_sdk import InferenceHTTPClient
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def validate_shirt(image_path):
+    """
+    Validate if the person in the image is wearing a collared shirt using best_shirt model.
+    Returns: True if collared shirt is detected with high confidence, otherwise False.
+    """
+    print("👕 Starting shirt validation...")
+
+    try:
+        # Load model
+        model = YOLO("models/best_shirt.pt",weights_only=False)
+
+        # Read image
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Không thể đọc ảnh")
+
+        # Run prediction
+        results = model.predict(source=img, conf=0.4, verbose=False)
+
+        # Parse predictions
+        for result in results:
+            for box in result.boxes:
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+                class_name = model.names[cls]
+
+                print(f"🔎 Detected: {class_name} ({conf:.2f})")
+
+                if class_name.lower() == "collared shirt" and conf >= 0.4:
+                    print("✅ Validation passed: Collared shirt detected.")
+                    return True
+
+        raise ValueError("Ảnh không hợp lệ: Vui lòng mặc áo có cổ.")
+    
+    except ValueError as ve:
+        raise ve
+    except Exception as e:
+        print(f"[validate_shirt] Lỗi: {e}")
+        print("⚠️ Warning: Could not validate shirt due to model error, continuing...")
+        return False
+    return True
 
 
 def validate_smile(image_path):
@@ -93,7 +136,7 @@ def validate_hat_glasses(image_path):
                     confidence = pred.get('confidence', 0)
                     
                     # Chỉ xem xét các detection có confidence > 0.5
-                    if confidence > 0.5:
+                    if confidence > 0.7:
                         if 'suspicious-cap' in class_name or 'cap' in class_name or 'helmet' in class_name:
                             detected_items.append('mũ')
                         elif 'suspicious-sunglasses' in class_name or 'sunglasses' in class_name or 'eyewear' in class_name:
@@ -189,6 +232,38 @@ def detect_head_region(image_path, model_path="models/best_re_final.onnx", conf_
     except Exception as e:
         print(f"Lỗi nhận diện: {e}")
         return None
+
+def validate_all(image_path):
+    validators = {
+        "smile": validate_smile,
+        "shirt": validate_shirt,
+        "photo_requirements": validate_photo_requirements,
+        "hat_glasses": validate_hat_glasses,
+    }
+
+    results = []
+    errors = []
+
+    with ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(func, image_path): name
+            for name, func in validators.items()
+        }
+
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                result = future.result()
+                results.append((name, result))
+            except Exception as e:
+                errors.append(f"[{name}] {str(e)}")
+
+    if errors:
+        raise ValueError("❌ Lỗi kiểm tra ảnh:\n" + "\n".join(errors))
+    
+    print("🎉 Ảnh hợp lệ: Qua tất cả kiểm tra")
+    return True
+
 
 def detect_person_region(image_path, model_path="models/best_re_final.onnx", conf_threshold=0.5):
     """
@@ -289,6 +364,7 @@ def extract_head_region_from_person(person_bbox, image_shape):
     head_y2 = head_y1 + head_height
     
     return [head_x1, head_y1, head_x2, head_y2]
+
 
 def handle_convert_visa(
     input_image_path, output_image_path, bbox, 

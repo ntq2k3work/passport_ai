@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 import shutil
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from handle_convert import handle_convert_visa, detect_head_region, validate_photo_requirements, validate_smile
+from handle_convert import handle_convert_visa, detect_head_region, validate_photo_requirements, validate_smile,validate_shirt,validate_all
 from typing import Optional
 from fastapi.responses import JSONResponse as JsonResponse
 
@@ -38,7 +38,7 @@ def convert_image(
     
     # Validate photo requirements (hat, glasses, etc.)
     try:
-        validate_photo_requirements(input_path)
+        validate_all(input_path)
     except ValueError as e:
         os.remove(input_path)
         raise HTTPException(
@@ -46,14 +46,23 @@ def convert_image(
             detail={"error": "ValidationError", "message": str(e)}
         )
         
-    try:
-        validate_smile(input_path)
-    except ValueError as e:
-        os.remove(input_path)
-        raise HTTPException(
-            status_code=422,
-            detail={"error": "SmileValidationError", "message": str(e)}
-        )
+    # try:
+    #     validate_shirt(input_path)
+    # except ValueError as e:
+    #     os.remove(input_path)
+    #     raise HTTPException(
+    #         status_code=422,
+    #         detail={"error": "ValidationError", "message": str(e)}
+    #     )
+        
+    # try:
+    #     validate_smile(input_path)
+    # except ValueError as e:
+    #     os.remove(input_path)
+    #     raise HTTPException(
+    #         status_code=422,
+    #         detail={"error": "SmileValidationError", "message": str(e)}
+    #     )
     except Exception as e:
         os.remove(input_path)
         raise HTTPException(
