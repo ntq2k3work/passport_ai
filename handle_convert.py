@@ -105,6 +105,54 @@ def validate_photo_requirements(image_path):
         
     except Exception as e:
         raise e
+
+
+def validate_glasses(image_path):
+    """
+    Validate if the person in the image is wearing a hat or glasses
+    Returns: True if valid (no hat/glasses), raises ValueError if invalid
+    """
+    print("🔍 Starting hat/glasses validation...")
+    
+    CLIENT = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key="2ZBwL1lXweIugeMxuOe9"
+    )
+
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Không thể đọc ảnh")
+            
+        result = result = CLIENT.infer(img, model_id="glasses-2jg7p/3")
+        
+        
+        # Kiểm tra kết quả từ API
+        if 'predictions' in result and len(result['predictions']) > 0:
+            predictions = result['predictions']
+            
+            for pred in predictions:
+                if 'class' in pred:
+                    class_name = pred['class'].lower()
+                    confidence = pred.get('confidence', 0)
+                    
+                    # Chỉ xem xét các detection có confidence > 0.5
+                    if confidence > 0.7 and 'glasses' in class_name:
+                        raise ValueError(f"Ảnh không hợp lệ: phát hiện có kính "
+                               f"Vui lòng chụp ảnh không đội mũ, đeo kính hoặc đeo khẩu trang.")
+
+                    
+        print("✅ Validation passed: No hat, glasses, or mask detected")
+        return True
+
+    except ValueError as ve:
+        raise ve  # Để API catch được
+    except Exception as e:
+        print(f"[validate_hat_glasses] Lỗi: {e}")
+        # Trong trường hợp lỗi API, vẫn cho phép tiếp tục xử lý
+        print("⚠️ Warning: Could not validate hat/glasses due to API error, continuing...")
+        return True
+    
 def validate_hat_glasses(image_path):
     """
     Validate if the person in the image is wearing a hat or glasses
@@ -239,6 +287,7 @@ def validate_all(image_path):
         "shirt": validate_shirt,
         "photo_requirements": validate_photo_requirements,
         "hat_glasses": validate_hat_glasses,
+        "glasses": validate_glasses
     }
 
     results = []
