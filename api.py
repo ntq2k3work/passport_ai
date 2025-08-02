@@ -30,7 +30,7 @@ def convert_image(
     right_margin_mm: float = Form(...)
 ):
     input_path = f"temp_{file.filename}"
-    output_path = f"output_{file.filename}"
+    output_path = f"./output/output_{file.filename}"
     
     # Lưu file upload tạm thời
     with open(input_path, "wb") as buffer:

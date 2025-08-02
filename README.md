@@ -66,3 +66,4 @@ ssh -R 80:localhost:8000 ssh.localhost.run
 
 <!-- train -->
 yolo task=detect mode=train model=yolov8n.pt data=dataset/data.yml epochs=100 imgsz=640 batch=16
+

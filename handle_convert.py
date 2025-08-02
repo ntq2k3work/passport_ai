@@ -73,7 +73,7 @@ def validate_smile(image_path):
         if 'predictions' in result and len(result['predictions']) > 0:
             predictions = result['predictions']
             for pred in predictions:
-                if 'class' in pred and pred['class'].lower() == 'non-smiling' and pred.get('confidence') >= 0.8:
+                if ('class' in pred and pred['class'].lower() == 'non-smiling' and pred.get('confidence') >= 0.7):
                     print("✅ Validation passed: Person is smiling")
                     return True
         
@@ -153,6 +153,49 @@ def validate_glasses(image_path):
         print("⚠️ Warning: Could not validate hat/glasses due to API error, continuing...")
         return True
     
+def validate_side_face(image_path):
+    """
+    Validate if the person in the image is wearing a hat or glasses
+    Returns: True if valid (no hat/glasses), raises ValueError if invalid
+    """
+    print("🔍 Running inference on image...")
+    
+    CLIENT = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key="2ZBwL1lXweIugeMxuOe9"
+    )
+
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("Không thể đọc ảnh")
+            
+        result = result = CLIENT.infer(img, model_id="face-views/1")
+        
+        # Kiểm tra kết quả từ API
+        if 'predictions' in result and len(result['predictions']) > 0:
+            predictions = result['predictions']
+            for pred in predictions:
+                if 'class' in pred:
+                    print(pred)
+                    class_name = pred['class']
+                    confidence = pred.get('confidence', 0)
+                    
+                    if (confidence >= 0.5 and 'SideView' in class_name) :
+                        print("❌ Phát hiện mặt nghiêng trong ảnh")
+                        raise ValueError(f"Phát hiện mặt nghiêng trong ảnh. ")
+                    
+        print("✅ Validation passed: No side face detected")
+        return True
+
+    except ValueError as ve:
+        raise ve  # Để API catch được
+    except Exception as e:
+        print(f"[validate_hat_glasses] Lỗi: {e}")
+        # Trong trường hợp lỗi API, vẫn cho phép tiếp tục xử lý
+        print("⚠️ Warning: Could not validate hat/glasses due to API error, continuing...")
+        return True
+    
 def validate_hat_glasses(image_path):
     """
     Validate if the person in the image is wearing a hat or glasses
@@ -162,7 +205,7 @@ def validate_hat_glasses(image_path):
     
     CLIENT = InferenceHTTPClient(
         api_url="https://serverless.roboflow.com",
-        api_key="2ZBwL1lXweIugeMxuOe9"
+        api_key="9RhvgsEtp65D2Tr2e8KqeD3x"
     )
 
     try:
@@ -287,7 +330,8 @@ def validate_all(image_path):
         "shirt": validate_shirt,
         "photo_requirements": validate_photo_requirements,
         "hat_glasses": validate_hat_glasses,
-        "glasses": validate_glasses
+        "glasses": validate_glasses,
+        "side_face": validate_side_face
     }
 
     results = []
